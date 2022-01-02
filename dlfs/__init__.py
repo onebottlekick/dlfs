@@ -1,1 +1,1 @@
-from dlfs.main import Variable
+from dlfs.core import Variable
