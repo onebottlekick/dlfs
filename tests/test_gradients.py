@@ -32,3 +32,16 @@ class GradientTest(unittest.TestCase):
         x.grad = A.backward(a.grad)
 
         self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
+        
+    def test_gradient2(self):
+        A = Square()
+        B = Exp()
+        C = Square()
+        a = A(x)
+        b = B(a)
+        y = C(b)
+        
+        y.grad = np.array(1.0)
+        y.backward()
+
+        self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
