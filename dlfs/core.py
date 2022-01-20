@@ -1,8 +1,17 @@
 import numpy as np
 
 
+def as_array(x):
+    if np.isscalar(x):
+        return np.array(x)
+    return x
+
 class Variable:
     def __init__(self, data):
+        if data is not None:
+            if not isinstance(data, np.ndarray):
+                raise TypeError(f'{type(data)} is not supported')
+
         self.data = data
         self.grad = None
         self.creator = None
@@ -25,7 +34,7 @@ class Function:
     def __call__(self, input):
         x = input.data
         y = self.forward(x)
-        output = Variable(y)
+        output = Variable(as_array(y))
         output.set_creator(self)
         self.input = input
         self.output = output
