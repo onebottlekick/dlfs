@@ -22,5 +22,5 @@ class VariableTest(unittest.TestCase):
         y = C(b)
         
         self.assertTrue(y.creator, C)
-        self.assertTrue(y.creator.input, b)
+        self.assertTrue(y.creator.inputs, b)
         self.assertTrue(b.creator, B)
