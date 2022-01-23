@@ -31,7 +31,7 @@ class Variable:
         
         
 class Function:
-    def __call__(self, inputs):
+    def __call__(self, *inputs):
         xs = [x.data for x in inputs]
         ys = self.forward(xs)
         outputs = [Variable(as_array(y)) for y in ys]
@@ -40,7 +40,7 @@ class Function:
             output.set_creator(self)
         self.inputs = inputs
         self.outputs = outputs
-        return outputs
+        return outputs if len(outputs) > 1 else outputs[0]
     
     def forward(self, x):
         raise NotImplementedError()
