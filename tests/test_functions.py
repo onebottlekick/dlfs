@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from dlfs import Variable, Square, Exp, square, exp
+from dlfs import Variable, Square, Add, Exp, square, exp, add
 
 
 x = Variable(np.array([10]))
@@ -15,6 +15,10 @@ class FunctionTest(unittest.TestCase):
     def test_exp(self):
         y = Exp()(x)
         self.assertTrue(np.exp(x.data), y.data)
+        
+    def test_add(self):
+        y = Add()(x, x)
+        self.assertTrue(np.add(x.data, x.data), y.data)
         
     def test_composite_function(self):
         A = Square()

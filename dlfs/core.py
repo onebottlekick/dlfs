@@ -55,7 +55,7 @@ class Function:
     def forward(self, x):
         raise NotImplementedError()
     
-    def backward():
+    def backward(self):
         raise NotImplementedError()
     
 
@@ -78,6 +78,16 @@ class Exp(Function):
         gx = np.exp(x)*gy
         return gx
     
+
+class Add(Function):
+    def forward(self, *xs):
+        x0, x1 = xs
+        y = x0 + x1
+        return (y,)
+
+    def backward(self, gy):
+        return gy, gy
+    
     
 def square(x):
     return Square()(x)
@@ -85,3 +95,7 @@ def square(x):
 
 def exp(x):
     return Exp()(x)
+
+
+def add(xs):
+    return Add()(xs)
