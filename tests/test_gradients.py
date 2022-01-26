@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from dlfs import Variable, Square, Exp
+from dlfs import Variable, Square, Exp, Add
 
 
 x = Variable(np.array(0.5))
@@ -45,3 +45,11 @@ class GradientTest(unittest.TestCase):
         y.backward()
 
         self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
+        
+    def test_generation(self):
+        a = Square()(x)
+        y = Add()(Square()(a), Square()(a))
+        y.backward()
+        
+        self.assertTrue(y.data, 0.125)
+        self.assertTrue(x.grad, 1.0)
