@@ -4,6 +4,7 @@ import weakref
 import numpy as np
 
 
+
 def as_array(x):
     if np.isscalar(x):
         return np.array(x)
@@ -101,7 +102,8 @@ class Variable:
             return 'variable(None)'
         p = str(self.data).replace('\n', '\n' + ' '*9)
         return 'variable(' + p + ')'
-        
+
+
 class Function:
     def __call__(self, *inputs):
         xs = [x.data for x in inputs]
@@ -182,3 +184,6 @@ def add(xs):
 
 def mul(x0, x1):
     return Mul()(x0, x1)
+
+Variable.__mul__ = mul
+Variable.__add__ = add
