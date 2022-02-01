@@ -156,7 +156,17 @@ class Add(Function):
 
     def backward(self, gy):
         return gy, gy
+
+
+class Mul(Function):
+    def forward(self, x0, x1):
+        y = x0*x1
+        return y
     
+    def backward(self, gy):
+        x0, x1 = self.inputs[0].data, self.inputs[1].data
+        return gy*x1, gy*x0
+
     
 def square(x):
     return Square()(x)
@@ -168,3 +178,7 @@ def exp(x):
 
 def add(xs):
     return Add()(xs)
+
+
+def mul(x0, x1):
+    return Mul()(x0, x1)
