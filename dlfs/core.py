@@ -11,6 +11,12 @@ def as_array(x):
     return x
 
 
+def as_variable(obj):
+    if isinstance(obj, Variable):
+        return obj
+    return Variable(obj)
+
+
 @contextlib.contextmanager
 def using_config(name, value):
     old_value = getattr(Config, name)
@@ -25,6 +31,7 @@ def no_grad():
     return using_config('enable_backprop', False)
 
 class Variable:
+    __array_priority__ = 200
     def __init__(self, data, name=None):
         if data is not None:
             if not isinstance(data, np.ndarray):
@@ -106,6 +113,8 @@ class Variable:
 
 class Function:
     def __call__(self, *inputs):
+        inputs = [as_variable(x) for x in inputs]
+        
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
@@ -186,4 +195,6 @@ def mul(x0, x1):
     return Mul()(x0, x1)
 
 Variable.__mul__ = mul
+Variable.__rmul__ = mul
 Variable.__add__ = add
+Variable.__radd__ = add
