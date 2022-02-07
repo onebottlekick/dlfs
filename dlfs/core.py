@@ -231,8 +231,8 @@ def exp(x):
     return Exp()(x)
 
 
-def add(xs):
-    return Add()(xs)
+def add(x0, x1):
+    return Add()(x0, x1)
 
 
 def mul(x0, x1):
@@ -264,7 +264,7 @@ def rdiv(x0, x1):
 
 
 def pow(x, c):
-    return Pow()(c)(x)
+    return Pow(c)(x)
 
 Variable.__mul__ = mul
 Variable.__rmul__ = mul
