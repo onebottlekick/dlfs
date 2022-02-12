@@ -1,7 +1,7 @@
 from tkinter import Y
 import numpy as np
 
-from core import Function, as_variable
+from .core import Function, as_variable
 
 
 class Tanh(Function):
@@ -31,7 +31,7 @@ class Reshape(Function):
 class Transpose(Function):
     def forward(self, x):
         y = np.transpose(x)
-        return Y
+        return y
     
     def backward(self, gy):
         gx = transpose(gy)
