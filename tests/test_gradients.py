@@ -5,7 +5,7 @@ import numpy as np
 from dlfs import Variable, Square, Exp, Add
 
 
-x = Variable(np.array(0.5))
+x = Variable(np.array([0.5]))
 
 
 def numerical_gradient(f, x, eps=1e-4):
@@ -41,7 +41,7 @@ class GradientTest(unittest.TestCase):
         b = B(a)
         y = C(b)
         
-        y.grad = np.array(1.0)
+        y.grad = np.array([1.0])
         y.backward()
 
         self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
@@ -60,8 +60,8 @@ class ComplexFunctionTest(unittest.TestCase):
         def sphere(x, y):
             z = x**2 + y**2
             return z
-        x = Variable(np.array(1.0))
-        y = Variable(np.array(1.0))
+        x = Variable(np.array([1.0]))
+        y = Variable(np.array([1.0]))
         z = sphere(x, y)
         z.backward()
         self.assertTrue(x.grad, 2.0)
