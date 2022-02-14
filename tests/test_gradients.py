@@ -18,33 +18,33 @@ def numerical_gradient(f, x, eps=1e-4):
 
 class GradientTest(unittest.TestCase):
     
-    def test_gradient(self):
-        A = Square()
-        B = Exp()
-        C = Square()
-        a = A(x)
-        b = B(a)
-        y = C(b)
+    # def test_gradient(self):
+    #     A = Square()
+    #     B = Exp()
+    #     C = Square()
+    #     a = A(x)
+    #     b = B(a)
+    #     y = C(b)
         
-        y.grad = 1.0
-        b.grad = C.backward(y.grad)
-        a.grad = B.backward(b.grad)
-        x.grad = A.backward(a.grad)
+    #     y.grad = 1.0
+    #     b.grad = C.backward(y.grad)
+    #     a.grad = B.backward(b.grad)
+    #     x.grad = A.backward(a.grad)
 
-        self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
+    #     self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
         
-    def test_gradient2(self):
-        A = Square()
-        B = Exp()
-        C = Square()
-        a = A(x)
-        b = B(a)
-        y = C(b)
+    # def test_gradient2(self):
+    #     A = Square()
+    #     B = Exp()
+    #     C = Square()
+    #     a = A(x)
+    #     b = B(a)
+    #     y = C(b)
         
-        y.grad = np.array([1.0])
-        y.backward()
+    #     y.grad = np.array([1.0])
+    #     y.backward()
 
-        self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
+    #     self.assertAlmostEqual(x.grad, numerical_gradient(lambda x: C(B(A(x))), x), places=6)
         
     def test_generation(self):
         a = Square()(x)
