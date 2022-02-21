@@ -1,7 +1,7 @@
-from tkinter import Y
 import numpy as np
 
 from .core import Function, as_variable
+from . import utils
 
 
 class Tanh(Function):
@@ -36,6 +36,23 @@ class Transpose(Function):
     def backward(self, gy):
         gx = transpose(gy)
         return gx
+    
+
+class Sum(Function):
+    def __init__(self, axis, keepdims):
+        self.axis = axis
+        self.keepdims = keepdims    
+    
+    def forward(self, x):
+        self.x_shape = x.shape
+        y = x.sum(axis=self.axis, keepdims=self.keepdims)
+        return y
+    
+    def backward(self, gy):
+        gy = utils.reshape_sum_backward(gy, self.x_shape, self.axis, self.keepdims)
+        
+        gx = broadcast_to(gy, self.x_shape)
+        return gx
 
 
 def tanh(x):
@@ -47,5 +64,10 @@ def reshape(x, shape):
         return as_variable(x)
     return Reshape(shape)(x)
 
+
 def transpose(x):
     return Transpose()(x)
+
+
+def sum(x, axis=None, keepdims=False):
+    return Sum(axis, keepdims)(x)

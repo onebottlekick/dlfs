@@ -111,6 +111,9 @@ class Variable:
     def T(self):
         return dlfs.functions.transpose(self)
     
+    def sum(self, axis=None, keepdims=False):
+        return dlfs.functions.sum(self, axis, keepdims)
+    
     def __len__(self):
         return len(self.data)
     
