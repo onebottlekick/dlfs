@@ -173,13 +173,17 @@ class Exp(Function):
     
 
 class Add(Function):
-    def forward(self, *xs):
-        x0, x1 = xs
+    def forward(self, x0, x1):
+        self.x0_shape, self.x1_shape = x0.shape, x1.shape
         y = x0 + x1
-        return (y,)
+        return y
 
     def backward(self, gy):
-        return gy, gy
+        gx0, gx1 = gy, gy
+        if self.x0_shape != self.x1_shape:
+            gx0 = dlfs.functions.sum_to(gx0, self.x0_shape)
+            gx1 = dlfs.functions.sum_to(gx1, self.x1_shape)
+        return gx0, gx1
 
 
 class Mul(Function):
