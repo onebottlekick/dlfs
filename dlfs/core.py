@@ -122,6 +122,10 @@ class Variable:
             return 'variable(None)'
         p = str(self.data).replace('\n', '\n' + ' '*9)
         return 'variable(' + p + ')'
+    
+    
+class Parameter(Variable):
+    pass
 
 
 class Function:
