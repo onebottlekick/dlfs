@@ -107,22 +107,6 @@ class MeanSquaredError(Function):
         gx0 = gy*diff*(2./len(diff))
         gx1 = -gx0
         return gx0, gx1
-    
-    
-class Linear(Function):
-    def forward(self, x, W, b):
-        y = x.dot(W)
-        if b is not None:
-            y += b
-            
-        return y
-    
-    def backward(self, gy):
-        x, W, b = self.inputs
-        gb = None if b.data is None else sum_to(gy, b.shape)
-        gx = matmul(gy, W.T)
-        gW = matmul(x.T, gy)
-        return gx, gW, gb
 
 
 def tanh(x):
@@ -158,9 +142,14 @@ def matmul(x, W):
     return MatMul()(x, W)
 
 
-def mean_squred_error(x0, x1):
+def mean_squared_error(x0, x1):
     return MeanSquaredError()(x0, x1)
 
 
 def linear(x, W, b=None):
-    return Linear()(x, W, b)
+    t = matmul(x, W)
+    if b is None:
+        return t
+    y = t + b
+    t.data = None
+    return y
