@@ -11,7 +11,7 @@ class Layer:
         self._params = set()
         
     def __setattr__(self, name, value):
-        if isinstance(value, Parameter):
+        if isinstance(value, (Parameter, Layer)):
             self._params.add(name)
         super().__setattr__(name, value)
         
