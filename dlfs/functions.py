@@ -153,3 +153,10 @@ def linear(x, W, b=None):
     y = t + b
     t.data = None
     return y
+
+
+def softmax(x, axis=1):
+    x = as_variable(x)
+    y = exp(x)
+    sum_y = sum(y, axis=axis, keepdims=True)
+    return y/sum_y
