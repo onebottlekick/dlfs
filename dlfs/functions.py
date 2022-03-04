@@ -108,6 +108,17 @@ class MeanSquaredError(Function):
         gx1 = -gx0
         return gx0, gx1
 
+class ReLU(Function):
+    def forward(self, x):
+        y = np.maximum(x, 0.0)
+        return y
+    
+    def backward(self, gy):
+        x,  = self.inputs
+        mask = x.data > 0
+        gx = gy*mask
+        return gx
+
 
 def tanh(x):
     return Tanh()(x)
@@ -160,3 +171,7 @@ def softmax(x, axis=1):
     y = exp(x)
     sum_y = sum(y, axis=axis, keepdims=True)
     return y/sum_y
+
+
+def relu(x):
+    return ReLU()(x)
