@@ -89,3 +89,24 @@ class Adam(Optimizer):
         m += (1 - beta1)*(grad - m)
         v += (1 - beta2)*(grad*grad - v)
         param.data -= self.lr*m/(np.sqrt(v) + eps)
+        
+        
+class AdaGrad(Optimizer):
+    def __init__(self, lr=0.001, eps=1e-8):
+        super(AdaGrad, self).__init__()
+        self.lr = lr
+        self.eps = eps
+        self.hs = {}
+        
+    def update_one(self, param):
+        h_key = id(param)
+        if h_key not in self.hs:
+            self.hs[h_key] = np.zeros_like(param.data)
+            
+        lr = self.lr
+        eps = self.eps
+        grad = param.grad.data
+        h = self.hs[h_key]
+        
+        h += grad*grad
+        param.data -= lr*grad/(np.sqrt(h) + eps)
