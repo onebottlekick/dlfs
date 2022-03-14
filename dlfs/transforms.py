@@ -29,3 +29,20 @@ class ToArray:
             return img
         else:
             raise TypeError
+        
+        
+class Resize:
+    def __init__(self, size, mode=Image.BILINEAR):
+        def pair(x):
+            if isinstance(x, int):
+                return (x, x)
+            elif isinstance(x, tuple):
+                assert len(x) == 2
+                return x
+            else:
+                return ValueError
+        self.size = pair(size)
+        self.mode = mode
+        
+    def __call__(self, img):
+        return img.resize(self.size, self.mode)
