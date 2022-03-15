@@ -46,3 +46,14 @@ class Resize:
         
     def __call__(self, img):
         return img.resize(self.size, self.mode)
+    
+    
+class Flatten:
+    def __call__(self, array):
+        return array.flatten()
+    
+
+class ToPIL:
+    def __call__(self, array):
+        data = array.transpose(1, 2, 0)
+        return Image.fromarray(data)
