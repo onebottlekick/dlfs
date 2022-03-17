@@ -57,3 +57,25 @@ class ToPIL:
     def __call__(self, array):
         data = array.transpose(1, 2, 0)
         return Image.fromarray(data)
+    
+    
+class CenterCrop:    
+    def __init__(self, size):
+        def pair(x):
+            if isinstance(x, int):
+                return (x, x)
+            elif isinstance(x, tuple):
+                assert len(x) == 2
+                return x
+            else:
+                return ValueError
+        self.size = pair(size)
+        
+    def __call__(self, img):
+        W, H = img.size
+        OW, OH = self.size
+        left = (W - OW)//2
+        right = W - ((W - OW)//2 + (W - OW)%2)
+        up = (H - OH)//2
+        bottom = H - ((H - OH)//2 + (H - OH)%2)
+        return img.crop(left, up, right, bottom)
