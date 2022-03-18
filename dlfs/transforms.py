@@ -79,3 +79,11 @@ class CenterCrop:
         up = (H - OH)//2
         bottom = H - ((H - OH)//2 + (H - OH)%2)
         return img.crop(left, up, right, bottom)
+    
+
+class AsType:
+    def __init__(self, dtype=np.float32):
+        self.dtype = dtype
+    
+    def __call__(self, array):
+        return array.astype(self.dtype)
