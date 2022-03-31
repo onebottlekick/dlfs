@@ -28,3 +28,15 @@ def as_numpy(x):
         
     if np.isscalar(x):
         return np.array(x)
+
+    elif isinstance(x, np.ndarray):
+        return x
+    
+
+def as_cupy(x):
+    if isinstance(x, Variable):
+        x = x.data
+        
+    if not gpu_enable:
+        raise Exception('Can not load cupy. Please install cupy')
+    return cp.asarray(x)
