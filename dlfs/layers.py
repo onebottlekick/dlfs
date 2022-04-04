@@ -40,6 +40,14 @@ class Layer:
         for param in self.params():
             param.cleargrad()
             
+    def to_cpu(self):
+        for param in self.params():
+            param.to_cpu()
+            
+    def to_gpu(self):
+        for param in self.params():
+            param.to_gpu()
+            
             
 class Linear(Layer):
     def __init__(self, out_size, nobias=False, dtype=np.float32, in_size=None):

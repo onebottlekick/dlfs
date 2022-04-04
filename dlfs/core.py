@@ -4,6 +4,12 @@ import weakref
 import numpy as np
 import dlfs
 
+try:
+    import cupy
+    array_types = (np.ndarray, cupy.ndarray)
+except ImportError:
+    array_types = (np.ndarray)
+
 
 
 def as_array(x):
@@ -35,7 +41,7 @@ class Variable:
     __array_priority__ = 200
     def __init__(self, data, name=None):
         if data is not None:
-            if not isinstance(data, np.ndarray):
+            if not isinstance(data, array_types):
                 raise TypeError(f'{type(data)} is not supported')
 
         self.data = data
@@ -50,7 +56,8 @@ class Variable:
         
     def backward(self, retain_grad=False, create_graph=False):
         if self.grad is None:
-            self.grad = Variable(np.ones_like(self.data))
+            xp = dlfs.get_array_module(self.data)
+            self.grad = Variable(xp.ones_like(self.data))
 
         funcs = []
         seen_set = set()
@@ -122,6 +129,14 @@ class Variable:
             return 'variable(None)'
         p = str(self.data).replace('\n', '\n' + ' '*9)
         return 'variable(' + p + ')'
+    
+    def to_cpu(self):
+        if self.data is not None:
+            self.data = dlfs.as_numpy(self.data)
+            
+    def to_gpu(self):
+        if self.data is not None:
+            self.data = dlfs.as_cupy(self.data)
     
     
 class Parameter(Variable):
