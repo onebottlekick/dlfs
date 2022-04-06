@@ -1,12 +1,14 @@
 import numpy as np
 
+import cuda
 from .core import Function, as_variable, exp
 from . import utils
 
 
 class Tanh(Function):
     def forward(self, x):
-        y = np.tanh(x)
+        xp = cuda.get_array_module(x)
+        y = xp.tanh(x)
         return y
     
     def backward(self, gy):
@@ -61,7 +63,8 @@ class BroadcastTo(Function):
         
     def forward(self, x):
         self.x_shape = x.shape
-        y = np.broadcast_to(x, self.shape)
+        xp = cuda.get_array_module(x)
+        y = xp.broadcast_to(x, self.shape)
         return y
     
     def backward(self, gy):
@@ -110,13 +113,26 @@ class MeanSquaredError(Function):
 
 class ReLU(Function):
     def forward(self, x):
-        y = np.maximum(x, 0.0)
+        xp = cuda.get_array_module(x)
+        y = xp.maximum(x, 0.0)
         return y
     
     def backward(self, gy):
         x,  = self.inputs
         mask = x.data > 0
         gx = gy*mask
+        return gx
+    
+
+class Sigmoid(Function):
+    def forward(self, x):
+        xp = cuda.get_array_module(x)
+        y = xp.tanh(x*0.5)*0.5 + 0.5
+        return y
+    
+    def backward(self, gy):
+        y = self.outputs[0]()
+        gx = gy*y(1 - y)
         return gx
 
 
