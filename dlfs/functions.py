@@ -1,11 +1,8 @@
 import numpy as np
 
-<<<<<<< HEAD
 from .core import Function, as_variable, exp, Config
-=======
 import cuda
 from .core import Function, as_variable, exp
->>>>>>> 949cb0102a0651e3a88214e00d7d6a5d2aa3d376
 from . import utils
 from dlfs import cuda
 
