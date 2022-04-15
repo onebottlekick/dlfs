@@ -134,6 +134,30 @@ class Sigmoid(Function):
         y = self.outputs[0]()
         gx = gy*y(1 - y)
         return gx
+    
+
+class Sin(Function):
+    def forward(self, x):
+        xp = cuda.get_array_module(x)
+        y = xp.sin(x)
+        return y
+    
+    def backward(self, gy):
+        x, = self.inputs
+        gx = gy*cos(x)
+        return gx
+    
+
+class Cos(Function):
+    def forward(self, x):
+        xp = cuda.get_array_module(x)
+        y = xp.cos(x)
+        return y
+    
+    def backward(self, gy):
+        x, = self.inputs
+        gx = gy*(-sin(x))
+        return gx
 
 
 def tanh(x):
@@ -204,3 +228,11 @@ def dropout(x, dropout_ratio=0.5):
         return y
     else:
         return x
+    
+    
+def sin(x):
+    return Sin()(x)
+
+
+def cos(x):
+    return Cos()(x)
