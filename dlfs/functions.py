@@ -1,7 +1,7 @@
 import numpy as np
 
-from .core import Function, as_variable, exp, Config
-from . import utils
+from dlfs.core import Function, as_variable, exp, Config
+from dlfs import utils
 from dlfs import cuda
 
 

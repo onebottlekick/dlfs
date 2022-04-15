@@ -59,7 +59,7 @@ class Variable:
         
     def backward(self, retain_grad=False, create_graph=False):
         if self.grad is None:
-            xp = dlfs.get_array_module(self.data)
+            xp = dlfs.cuda.get_array_module(self.data)
             self.grad = Variable(xp.ones_like(self.data))
 
         funcs = []
@@ -135,11 +135,11 @@ class Variable:
     
     def to_cpu(self):
         if self.data is not None:
-            self.data = dlfs.as_numpy(self.data)
+            self.data = dlfs.cuda.as_numpy(self.data)
             
     def to_gpu(self):
         if self.data is not None:
-            self.data = dlfs.as_cupy(self.data)
+            self.data = dlfs.cuda.as_cupy(self.data)
     
     
 class Parameter(Variable):
