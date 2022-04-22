@@ -3,6 +3,7 @@ import numpy as np
 from dlfs.core import Function, as_variable, exp, Config
 from dlfs import utils
 from dlfs import cuda
+from utils import pair, get_conv_outsize
 
 
 class Tanh(Function):
@@ -158,6 +159,36 @@ class Cos(Function):
         x, = self.inputs
         gx = gy*(-sin(x))
         return gx
+    
+
+class Conv2d(Function):
+    def __init__(self, stride=1, padding=0):
+        super().__init__()
+        
+        self.stride = pair(stride)
+        self.padding = pair(padding)
+        
+    def forward(self, x, W, b):
+        xp = cuda.get_array_module(x)
+        
+        KH, KW = W.shape[2:]
+        col = im2col_array(x, (KH, KW), self.stride, self.padding, to_matrix=False)
+        
+        y = xp.tensordot(col, W, ((1, 2, 3), (1, 2, 3)))
+        if b is not None:
+            y += b
+        y = xp.rollaxis(y, 3, 1)
+        return y
+    
+    # TODO deconv2d, Conv2dGradW
+    def backward(self, gy):
+        x, W, b = self.inputs
+        gx = deconv2d(gy, W, b=None, stride=self.stride, padding=self.padding)
+        gW = Conv2dGradW(self)(x, gy)
+        gb = None
+        if b.data is not None:
+            gb = gy.sum(axis=(0, 2, 3))
+        return gx, gW, gb
 
 
 def tanh(x):
@@ -236,3 +267,36 @@ def sin(x):
 
 def cos(x):
     return Cos()(x)
+
+
+def conv2d(x, W, b=None, stride=1, padding=0):
+    return Conv2d(stride, padding)(x, W, b)
+
+
+def im2col_array(img, kernel_size, stride, padding, to_matrix=True):
+    N, C, H, W = img.shape
+    KH, KW = pair(kernel_size)
+    SH, SW = pair(stride)
+    PH, PW = pair(padding)
+    OH = get_conv_outsize(H, KH, SH, PH)
+    OW = get_conv_outsize(W, KW, SW, PW)
+    
+    xp = cuda.get_array_module(img)
+    
+    # TODO _im2col_gpu
+    if xp != np:
+        col = _im2col_gpu(img, kernel_size, stride, padding)
+    else:
+        img = np.pad(img, ((0, 0), (0, 0), (PH, PH + SH -1), (PW, PW + SW -1)), mode='constant', constant_values=(0, ))
+        col = np.ndarray((N, C, KH, KW, OH, OW), dtype=img.dtype)
+
+        for j in range(KH):
+            j_lim = j + SH*OH
+            for i in range(KW):
+                i_lim = i + SW*OW
+                col[:, :, j, i, :, :] = img[:, :, j:j_lim:SH, i:i_lim:SW]
+    
+    if to_matrix:
+        col = col.transpose((0, 4, 5, 1, 2, 3)).reshape((N*OH*OW, -1))
+        
+    return col
