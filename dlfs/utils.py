@@ -114,3 +114,7 @@ def pair(x):
 
 def get_conv_outsize(input_size, kernel_size, stride, padding):
     return (input_size + 2*padding - kernel_size)//stride + 1
+
+
+def get_deconv_outsize(size, kernel_size, stride, padding):
+    return stride*(size - 1) + kernel_size - 2*padding

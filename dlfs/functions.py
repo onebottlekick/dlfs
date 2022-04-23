@@ -3,7 +3,7 @@ import numpy as np
 from dlfs.core import Function, as_variable, exp, Config
 from dlfs import utils
 from dlfs import cuda
-from utils import pair, get_conv_outsize
+from utils import pair, get_conv_outsize, get_deconv_outsize
 
 
 class Tanh(Function):
@@ -180,11 +180,54 @@ class Conv2d(Function):
         y = xp.rollaxis(y, 3, 1)
         return y
     
-    # TODO deconv2d, Conv2dGradW
+    # TODO Conv2dGradW
     def backward(self, gy):
         x, W, b = self.inputs
         gx = deconv2d(gy, W, b=None, stride=self.stride, padding=self.padding)
         gW = Conv2dGradW(self)(x, gy)
+        gb = None
+        if b.data is not None:
+            gb = gy.sum(axis=(0, 2, 3))
+        return gx, gW, gb
+    
+
+# TODO col2im_array
+class Deconv2d(Function):
+    def __init__(self, stride=1, padding=0, outsize=None):
+        super().__init__()
+        self.stride = pair(stride)
+        self.padding = pair(padding)
+        self.outsize = outsize
+        
+    def forward(self, x, W, b):
+        xp = cuda.get_array_module(x)
+        
+        SH, SW = self.stride
+        PH, PW = self.padding
+        C, OC, KH, KW = W.shape
+        N, C, H, W  =x.shape
+        if self.outsize is None:
+            OH = get_deconv_outsize(H, KH, SH, PH)
+            OW = get_deconv_outsize(W, KW, SW, PW)
+        else:
+            OH, OW = pair(self.outsize)
+        img_shape = (N, OC, OH, OW)
+        
+        gcol = xp.tensordot(W, x, (0, 1))
+        gcol = xp.rollaxis(gcol, 3)
+        y = col2im_array(gcol, img_shape, (KH, KW), self.stride, self.padding, to_matrix=False)
+        
+        if b is not None:
+            self.no_bias = True
+            y += b.reshape((1, b.size, 1, 1))
+        
+        return y
+    
+    def backward(self, gy):
+        x, W, b = self.inputs
+        gx = conv2d(gy, W, b=None, stride=self.stride, padding=self.padding)
+        f = Conv2dGradW(self)
+        gW = f(gy, x)
         gb = None
         if b.data is not None:
             gb = gy.sum(axis=(0, 2, 3))
@@ -283,7 +326,6 @@ def im2col_array(img, kernel_size, stride, padding, to_matrix=True):
     
     xp = cuda.get_array_module(img)
     
-    # TODO _im2col_gpu
     if xp != np:
         col = _im2col_gpu(img, kernel_size, stride, padding)
     else:
@@ -300,3 +342,42 @@ def im2col_array(img, kernel_size, stride, padding, to_matrix=True):
         col = col.transpose((0, 4, 5, 1, 2, 3)).reshape((N*OH*OW, -1))
         
     return col
+
+
+def _im2col_gpu(img, kernel_size, stride, padding):
+    N, C, H, W = img.shape
+    KH, KW = pair(kernel_size)
+    SY, SX = pair(stride)
+    PH, PW = pair(padding)
+    OH = get_conv_outsize(H, KH, SY, PH)
+    OW = get_conv_outsize(W, KW, SX, PW)
+    dy, dx = 1, 1
+    col = cuda.cupy.empty((N, C, KH, KW, OH, OW), dtype=img.dtype)
+    
+    cuda.cupy.ElementwiseKernel(
+        'raw T img, int32 H, int32 W, int32 OH, int32 OW,'
+        'int32 KH, int32 KW, int32 SY, int32 SX, int32 PH, int32 PW,'
+        'int32 dy, int32 dx',
+        'T col',
+        '''
+           int c0 = i / (KH * KW * OH * OW);
+           int ky = i / (KW * OH * OW) % KH;
+           int kx = i / (OH * OW) % KW;
+           int out_y = i / OW % OH;
+           int out_x = i % OW;
+           int in_y = ky * dy + out_y * SY - PH;
+           int in_x = kx * dx + out_x * SX - PW;
+           if (in_y >= 0 && in_y < H && in_x >= 0 && in_x < W) {
+             col = img[in_x + W * (in_y + H * c0)];
+           } else {
+             col = 0;
+           }
+        ''',
+        'im2col'
+        )(img.reduced_view(), H, W, OH, OW, KH, KW, SY, SX, PH, PW, dy, dx, col)
+    
+    return col
+
+
+def deconv2d(x, W, b=None, stride=1, padding=0, outsize=None):
+    return Deconv2d(stride, padding, outsize)(x, W, b)
