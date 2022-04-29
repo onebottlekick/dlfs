@@ -180,7 +180,6 @@ class Conv2d(Function):
         y = xp.rollaxis(y, 3, 1)
         return y
     
-    # TODO Conv2dGradW
     def backward(self, gy):
         x, W, b = self.inputs
         gx = deconv2d(gy, W, b=None, stride=self.stride, padding=self.padding)
@@ -232,6 +231,30 @@ class Deconv2d(Function):
         if b.data is not None:
             gb = gy.sum(axis=(0, 2, 3))
         return gx, gW, gb
+
+
+class Conv2dGradW(Function):
+    def __init__(self, conv2d):
+        W = conv2d.inputs[1]
+        kh, kw = W.shape[2:]
+        self.kernel_size = (kh, kw)
+        self.strde = conv2d.stride
+        self.pad = conv2d.padding
+        
+    def forward(self, x, gy):
+        xp = cuda.get_array_module(x)
+        
+        col = im2col_array(x, self.kernel_size, self.stride, self.padding, to_matrix=False)
+        gW = xp.tensordot(gy, col, ((0, 2, 3), (0, 4, 5)))
+        return gW
+    
+    def backward(self, gys):
+        x, gy = self.inputs
+        gW, = self.outputs
+        xh, xw = x.shape[2:]
+        gx = deconv2d(gy, gW, stride=self.stride, padding=self.padding, outsize=(xh, xw))
+        ggy = conv2d(x, gW, stride=self.stride, padding=self.padding)
+        return gx, ggy
 
 
 def tanh(x):
