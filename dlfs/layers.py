@@ -3,7 +3,7 @@ import weakref
 
 import numpy as np
 
-from dlfs import Parameter
+from dlfs.core import Parameter
 from dlfs import functions as F
 from dlfs.utils import pair
 from dlfs import cuda

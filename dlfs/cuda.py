@@ -9,7 +9,7 @@ try:
 except ImportError:
     gpu_enable = False
     
-from dlfs import Variable
+from dlfs.core import Variable
 
 
 def get_array_module(x):

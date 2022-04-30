@@ -3,7 +3,7 @@ import numpy as np
 from dlfs.core import Function, as_variable, exp, Config
 from dlfs import utils
 from dlfs import cuda
-from utils import pair, get_conv_outsize, get_deconv_outsize
+from dlfs.utils import pair, get_conv_outsize, get_deconv_outsize
 
 
 class Tanh(Function):

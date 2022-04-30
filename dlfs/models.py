@@ -1,4 +1,4 @@
-from dlfs import Layer
+from dlfs.layers import Layer
 from dlfs import utils
 
 
