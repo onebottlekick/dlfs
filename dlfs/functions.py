@@ -189,8 +189,7 @@ class Conv2d(Function):
             gb = gy.sum(axis=(0, 2, 3))
         return gx, gW, gb
     
-
-# TODO col2im_array
+    
 class Deconv2d(Function):
     def __init__(self, stride=1, padding=0, outsize=None):
         super().__init__()
@@ -404,3 +403,65 @@ def _im2col_gpu(img, kernel_size, stride, padding):
 
 def deconv2d(x, W, b=None, stride=1, padding=0, outsize=None):
     return Deconv2d(stride, padding, outsize)(x, W, b)
+
+
+def col2im_array(col, img_shape, kernel_size, stride, padding, to_matrix=True):
+    N, C, H, W = img_shape
+    KH, KW = pair(kernel_size)
+    SH, SW = pair(stride)
+    PH, PW = pair(padding)
+    OH = get_conv_outsize(H, KH, SH, PH)
+    OW = get_conv_outsize(W, KW, SW, PW)
+
+    if to_matrix:
+        col = col.reshape(N, OH, OW, C, KH, KW).transpose(0, 3, 4, 5, 1, 2)
+
+    xp = cuda.get_array_module(col)
+    if xp != np:
+        img = _col2im_gpu(col, SH, SW, PH, PW, H, W)
+        return img
+    
+    else:
+        img = np.zeros((N, C, H + 2*PH + SH, W + 2*PW + SW -1), dtype=col.dtype)
+        
+        for j in range(KH):
+            j_lim = j + SH*OH
+            for i in range(KW):
+                i_lim = i + SW*OW
+                img[:, :, j:j_lim:SH, i:i_lim:SW] += col[:, :, j, i, :, :]
+        return img[:, :, PH:H+PH, PW:W+PW]
+    
+    
+def _col2im_gpu(col, SY, SX, PH, PW, H, W):
+    N, C, KH, KW, OH, OW = col.shape
+    dx, dy = 1, 1
+    img = cuda.cupy.empty((N, C, H, W), dtype=col.dtype)
+
+    cuda.cupy.ElementwiseKernel(
+            'raw T col, int32 H, int32 W, int32 OH, int32 OW,'
+        'int32 KH, int32 KW, int32 SY, int32 SX, int32 PH, int32 PW,'
+        'int32 dx, int32 dy',
+        'T img',
+        '''
+           int c0 = i / (h * w);
+           int y  = i / W % H;
+           int x  = i % W;
+           T val = 0;
+           for (int ky = 0; ky < KH; ++ky) {
+             int out_y = (y + PH - ky * dy);
+             if (0 > out_y || out_y >= out_h * SY) continue;
+             if (out_y % SY != 0) continue;
+             out_y /= SY;
+             for (int kx = 0; kx < kw; ++kx) {
+               int out_x = (x + PW - kx * dx);
+               if (0 > out_x || out_x >= OW * SX) continue;
+               if (out_x % SX != 0) continue;
+               out_x /= SX;
+               int k = out_y + OH * (kx + kw * (ky + kh * c0));
+               val = val + col[out_x + out_w * k];
+             }
+           }
+           img = val;
+        ''',
+        'col2im')(col.reduced_view(), H, W, OH, OW, KH, KW, SY, SX, PH, PW, dx, dy, img)
+    return img
