@@ -254,6 +254,27 @@ class Conv2dGradW(Function):
         gx = deconv2d(gy, gW, stride=self.stride, padding=self.padding, outsize=(xh, xw))
         ggy = conv2d(x, gW, stride=self.stride, padding=self.padding)
         return gx, ggy
+    
+
+# TODO Pooling2DGrad
+class Pooling(Function):
+    def __init__(self, kernel_size, stride=1, padding=0):
+        super().__init__()
+        
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+        
+    def forward(self, x):
+        col = im2col_array(x, self.kernel_size, self.stride, self.padding, to_maxrix=False)
+        N, C, KH, KW, OH, OW = col.shape
+        self.indexes = col.argmax(axis=2)
+        y = col.max(axis=2)
+        
+        return y
+    
+    def backward(self, gy):
+        return Pooling2DGrad(self)(gy)
 
 
 def tanh(x):
