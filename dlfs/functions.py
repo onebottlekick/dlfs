@@ -256,7 +256,6 @@ class Conv2dGradW(Function):
         return gx, ggy
     
 
-# TODO Pooling2DGrad
 class Pooling(Function):
     def __init__(self, kernel_size, stride=1, padding=0):
         super().__init__()
@@ -275,6 +274,42 @@ class Pooling(Function):
     
     def backward(self, gy):
         return Pooling2DGrad(self)(gy)
+    
+    
+# TODO Pooling2DWithIndexes
+class Pooling2DGrad(Function):
+    def __init__(self, mpool2d):
+        self.mpool2d = mpool2d
+        self.kernel_size = mpool2d.kernel_size
+        self.stride = mpool2d.stride
+        self.padding = mpool2d.padding
+        self.input_shape = mpool2d.inputs[0].shape
+        self.dtype = mpool2d.inputs[0].dtype
+        self.indexes = mpool2d.indexes
+        
+    def forward(self, gy):
+        xp = cuda.get_array_module(gy)
+        
+        N, C, OH, OW = gy.shape
+        N, C, H, W = self.input_shape
+        KH, KW = pair(self.kernel_size)
+        
+        gcol = xp.zeros((N*C*OH*OW*KH*KW), dtype=self.dtype)
+        
+        indexes = (self.indexes.ravel() + xp.arange(0, self.indexes.size*KH*KW, KH*KW))
+
+        gcol[indexes] = gy.ravel()
+        gcol = gcol.reshape(N, C, OH, OW, KH, KW)
+        gcol = xp.swapaxis(gcol, 2, 4)
+        gcol = xp.swapaxis(gcol, 3, 5)
+        
+        gx = col2im_array(gcol, (N, C, H, W), self.kernel_size, self.stride, self.padding, to_matrix=False)
+        
+        return gx
+    
+    def backward(self, ggx):
+        f = Pooling2DWithIndexes(self.mpool2d)
+        return f(ggx)
 
 
 def tanh(x):
